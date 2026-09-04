@@ -1,17 +1,547 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人简历</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的个人空间</title>
+    <style>
+        /* 全局重置 & 基础 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            background-color: #f5f7fa;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app {
+            width: 100%;
+            height: 100%;
+            max-width: 480px;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ---------- 顶部导航 ---------- */
+        .top-nav {
+            background-color: #ffffff;
+            padding: 12px 16px 8px 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-bottom: 1px solid #e9edf2;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        }
+
+        .nav-item {
+            font-size: 16px;
+            font-weight: 500;
+            color: #8e9aaf;
+            padding: 6px 0;
+            position: relative;
+            cursor: pointer;
+            transition: color 0.2s;
+            letter-spacing: 0.3px;
+            user-select: none;
+        }
+
+        .nav-item.active {
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+
+        /* ---------- 页面容器 ---------- */
+        .pages {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 16px 16px 20px 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            opacity: 0;
+            transform: translateX(30px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            background-color: #f5f7fa;
+        }
+
+        .page.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .page::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+
+        /* ---------- 主页（弹性布局） ---------- */
+        #page-home {
+            display: flex;
+            flex-direction: column;
+            padding: 16px 16px 20px 16px;
+            background-color: #f5f7fa;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #ffffff;
+            padding: 16px 18px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            flex-shrink: 0;
+            margin-bottom: 16px;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c8cff, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(107, 140, 255, 0.3);
+        }
+
+        .welcome {
+            flex: 1;
+        }
+
+        .welcome h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .welcome p {
+            font-size: 14px;
+            color: #6b7a8f;
+            line-height: 1.4;
+        }
+
+        /* ---------- 视频壁纸区 ---------- */
+        .video-wallpaper {
+            flex: 1;
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            position: relative;
+            touch-action: none;
+        }
+
+        .video-wallpaper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+
+        .video-indicator {
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            pointer-events: none;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+            letter-spacing: 1px;
+        }
+
+        /* ---------- 简历页（全屏PDF + 下载按钮） ---------- */
+        #page-resume {
+            padding: 0;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .pdf-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pdf-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* 下载按钮 - 悬浮右下角 */
+        .download-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: #3b82f6;
+            color: #fff;
+            border-radius: 40px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            z-index: 10;
+            touch-action: manipulation;
+            border: none;
+            outline: none;
+        }
+        .download-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        .download-btn svg {
+            stroke: #fff;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ---------- 作品页（6卡片网格） ---------- */
+        #page-projects {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .projects-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .project-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .project-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .project-card:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .project-icon {
+            font-size: 32px;
+            margin-bottom: 6px;
+        }
+
+        .project-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .project-info p {
+            font-size: 11px;
+            color: #6b7a8f;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* 适配小屏手机 */
+        @media (max-width: 480px) {
+            .app {
+                max-width: 100%;
+            }
+            .profile-header {
+                padding: 14px 16px;
+            }
+            .avatar {
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
+            }
+            .welcome h2 {
+                font-size: 17px;
+            }
+            .top-nav {
+                padding: 10px 12px 6px 12px;
+            }
+            .nav-item {
+                font-size: 15px;
+            }
+            .project-icon {
+                font-size: 28px;
+            }
+            .project-info h4 {
+                font-size: 13px;
+            }
+            .project-info p {
+                font-size: 10px;
+            }
+            .project-grid {
+                gap: 10px;
+            }
+            .download-btn {
+                bottom: 16px;
+                right: 16px;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            .download-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚀 欢迎来到我的个人网站</h1>
-        <p>这个页面由 <strong>C 语言编写的 HTTP 服务器</strong> 提供，静态资源由 <strong>Nginx</strong> 加速。</p>
-        <p><a href="files/resume.pdf" download>📄 下载我的简历 (PDF)</a></p>
+    <div class="app">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <div class="nav-item active" data-page="home">主页</div>
+            <div class="nav-item" data-page="resume">简历</div>
+            <div class="nav-item" data-page="projects">学习</div>
+        </div>
+
+        <!-- 页面容器 -->
+        <div class="pages">
+            <!-- ===== 主页 ===== -->
+            <div id="page-home" class="page active">
+                <div class="profile-header">
+                    <div class="avatar">H</div>
+                    <div class="welcome">
+                        <h2>你好，我是 黄博 👋</h2>
+                        <p>欢迎来到我的个人空间 · 分享技术与生活</p>
+                    </div>
+                </div>
+
+                <div class="video-wallpaper" id="videoWallpaper">
+                    <video id="bgVideo" autoplay loop muted playsinline webkit-playsinline></video>
+                    <div class="video-indicator" id="videoIndicator">1 / 3</div>
+                </div>
+            </div>
+
+            <!-- ===== 简历页 ===== -->
+            <div id="page-resume" class="page">
+                <div class="pdf-container">
+                    <iframe src="./files/resume.pdf" title="个人简历"></iframe>
+                    <!-- 下载按钮 -->
+                    <div class="download-btn" id="downloadBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>导出</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 作品页 ===== -->
+            <div id="page-projects" class="page">
+                <div class="projects-title">🚀 我的学习笔记与开源作品</div>
+                <div class="project-grid">
+                    <a href="https://github.com/hb8201/study_notes" target="_blank" class="project-card">
+                        <div class="project-icon">📚</div>
+                        <div class="project-info">
+                            <h4>study-notes</h4>
+                            <p>学习笔记</p>
+                        </div>
+                    </a>
+                    <a href="https://github.com/hb8201/Simart_Fish_Tank" target="_blank" class="project-card">
+                        <div class="project-icon">🐠</div>
+                        <div class="project-info">
+                            <h4>Simart-Fish-Tank</h4>
+                            <p>智能鱼缸</p>
+                        </div>
+                    </a>
+                    <a href="https://github.com/hb8201/chat_server" target="_blank" class="project-card">
+                        <div class="project-icon">🖥️</div>
+                        <div class="project-info">
+                            <h4>chat-server</h4>
+                            <p>多线程通信服务器</p>
+                        </div>
+                    </a>
+                    <a href="https://github.com/hb8201/HTTP_server" target="_blank" class="project-card">
+                        <div class="project-icon">🌐</div>
+                        <div class="project-info">
+                            <h4>HTTP-server</h4>
+                            <p>当前作品源码</p>
+                        </div>
+                    </a>
+                    <a href="https://github.com/hb8201/Topsort_CourseScheduling" target="_blank" class="project-card">
+                        <div class="project-icon">📅</div>
+                        <div class="project-info">
+                            <h4>Topsort-CourseScheduling</h4>
+                            <p>智能排课</p>
+                        </div>
+                    </a>
+                    <a href="https://github.com/hb8201/video-compression-tool" target="_blank" class="project-card">
+                        <div class="project-icon">🎬</div>
+                        <div class="project-info">
+                            <h4>video-compression-tool</h4>
+                            <p>视频压缩工具</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="js/main.js"></script>
+
+    <script>
+        // ========== 页面切换 ==========
+        (function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const pages = {
+                home: document.getElementById('page-home'),
+                resume: document.getElementById('page-resume'),
+                projects: document.getElementById('page-projects')
+            };
+
+            function switchPage(pageId) {
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.page === pageId) item.classList.add('active');
+                });
+                Object.keys(pages).forEach(key => {
+                    const page = pages[key];
+                    if (key === pageId) page.classList.add('active');
+                    else page.classList.remove('active');
+                });
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    switchPage(this.dataset.page);
+                });
+            });
+            switchPage('home');
+        })();
+
+        // ========== 视频滑动切换 ==========
+        (function() {
+            const videoList = [
+                './video/裂空座.mp4',
+                './video/视频2.mp4',
+                './video/视频3.mp4'
+            ];
+
+            let currentIndex = 0;
+            const video = document.getElementById('bgVideo');
+            const indicator = document.getElementById('videoIndicator');
+
+            function loadVideo(index) {
+                if (index < 0) index = videoList.length - 1;
+                if (index >= videoList.length) index = 0;
+                currentIndex = index;
+                video.src = videoList[currentIndex];
+                video.load();
+                video.play();
+                if (indicator) {
+                    indicator.textContent = `${currentIndex + 1} / ${videoList.length}`;
+                }
+            }
+
+            if (videoList.length > 0) loadVideo(0);
+
+            let touchStartX = 0;
+            const wallpaper = document.getElementById('videoWallpaper');
+
+            wallpaper.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            wallpaper.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            wallpaper.addEventListener('touchend', function(e) {
+                const diff = touchStartX - e.changedTouches[0].screenX;
+                if (Math.abs(diff) > 50) {
+                    loadVideo(diff > 0 ? currentIndex + 1 : currentIndex - 1);
+                }
+            }, { passive: true });
+        })();
+
+        // ========== PDF 下载功能 ==========
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.href = './files/resume.pdf';
+            link.download = '嵌入式工程师-黄博-简历.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
 </body>
 </html>

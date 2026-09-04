@@ -93,7 +93,7 @@ int main(int argc, char const *argv[]) {
 
             // 关键：静态文件根目录指向 html 子目录
             char ch1[2048];
-            snprintf(ch1, sizeof(ch1), "/home/hb/作业/项目/HTTP服务器/html%s", lujin);
+            snprintf(ch1, sizeof(ch1), "./html%s", lujin);
 
             int file_fd = open(ch1, O_RDONLY);
             if (file_fd == -1) {
