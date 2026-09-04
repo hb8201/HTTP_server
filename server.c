@@ -102,7 +102,7 @@ int main(int argc, char const *argv[]) {
                 send(c_fd, msg, strlen(msg), 0);
             } else {
                 char header[512];
-                snprintf(header, sizeof(header), "%s 200 OK\r\nContent-Type: %s\r\n\r\n", banben, mime);
+                snprintf(header, sizeof(header), "%s 200 OK\r\nContent-Type: %s\r\nAccess-Control-Allow-Origin: *\r\n\r\n", banben, mime);
                 send(c_fd, header, strlen(header), 0);
                 int n;
                 char body[4096];
