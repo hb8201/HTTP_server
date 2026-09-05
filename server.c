@@ -6,8 +6,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <signal.h>
+#include <pthread.h>   // 线程头文件
 
+// ---------- MIME 类型映射 ----------
 char *type(char *p) {
     if (strcmp(p, ".html") == 0) return "text/html";
     if (strcmp(p, ".css") == 0) return "text/css";
@@ -42,9 +43,60 @@ char *type(char *p) {
     return "application/octet-stream";
 }
 
-int main(int argc, char const *argv[]) {
-    signal(SIGCHLD, SIG_IGN);  // 防止子进程变成僵尸
+// ---------- 线程处理函数 ----------
+void *handle_client(void *arg) {
+    int c_fd = (int)(long)arg;   // 接收客户端套接字
 
+    char buf[4096] = {0};
+    recv(c_fd, buf, sizeof(buf) - 1, 0);
+    printf("📩 请求:\n%s\n", buf);
+
+    char fangfa[20], lujin[1024], banben[20];
+    sscanf(buf, "%s %s %s", fangfa, lujin, banben);
+
+    // 根目录补全 index.html
+    if (strcmp(lujin, "/") == 0 || strlen(lujin) == 0)
+        strcpy(lujin, "/index.html");
+
+    // 安全过滤，禁止目录遍历
+    if (strstr(lujin, "..") != NULL) {
+        char msg[] = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n<h1>403 Forbidden</h1>";
+        send(c_fd, msg, strlen(msg), 0);
+        close(c_fd);
+        return NULL;
+    }
+
+    // 获取 MIME 类型
+    char *dot = strrchr(lujin, '.');
+    char *mime = "application/octet-stream";
+    if (dot) mime = type(dot);
+
+    // 静态文件根目录指向 html 子目录
+    char ch1[2048];
+    snprintf(ch1, sizeof(ch1), "./html%s", lujin);
+
+    int file_fd = open(ch1, O_RDONLY);
+    if (file_fd == -1) {
+        char msg[1024];
+        snprintf(msg, sizeof(msg), "%s 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>", banben);
+        send(c_fd, msg, strlen(msg), 0);
+    } else {
+        char header[512];
+        snprintf(header, sizeof(header), "%s 200 OK\r\nContent-Type: %s\r\nAccess-Control-Allow-Origin: *\r\n\r\n", banben, mime);
+        send(c_fd, header, strlen(header), 0);
+        int n;
+        char body[4096];
+        while ((n = read(file_fd, body, sizeof(body))) > 0)
+            send(c_fd, body, n, 0);
+        close(file_fd);
+    }
+
+    close(c_fd);
+    return NULL;
+}
+
+// ---------- 主函数 ----------
+int main(int argc, char const *argv[]) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -55,7 +107,7 @@ int main(int argc, char const *argv[]) {
     addr.sin_addr.s_addr = INADDR_ANY;
     bind(fd, (struct sockaddr *)&addr, sizeof(addr));
     listen(fd, 9);
-    printf("✅ C 服务器启动，监听 9000 端口，PID: %d\n", getpid());
+    printf("✅ C 服务器启动（多线程），监听 9000 端口，PID: %d\n", getpid());
 
     while (1) {
         struct sockaddr_in c_addr;
@@ -63,59 +115,12 @@ int main(int argc, char const *argv[]) {
         int c_fd = accept(fd, (struct sockaddr *)&c_addr, &len);
         if (c_fd < 0) continue;
 
-        pid_t pid = fork();
-        if (pid == 0) {  // 子进程
-            close(fd);
-
-            char buf[4096] = {0};
-            recv(c_fd, buf, sizeof(buf) - 1, 0);
-            printf("📩 请求:\n%s\n", buf);
-
-            char fangfa[20], lujin[1024], banben[20];
-            sscanf(buf, "%s %s %s", fangfa, lujin, banben);
-
-            // 根目录补全 index.html
-            if (strcmp(lujin, "/") == 0 || strlen(lujin) == 0)
-                strcpy(lujin, "/index.html");
-
-            // 安全过滤，禁止目录遍历
-            if (strstr(lujin, "..") != NULL) {
-                char msg[] = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n<h1>403 Forbidden</h1>";
-                send(c_fd, msg, strlen(msg), 0);
-                close(c_fd);
-                exit(0);
-            }
-
-            // 获取 MIME 类型
-            char *dot = strrchr(lujin, '.');
-            char *mime = "application/octet-stream";
-            if (dot) mime = type(dot);
-
-            // 关键：静态文件根目录指向 html 子目录
-            char ch1[2048];
-            snprintf(ch1, sizeof(ch1), "./html%s", lujin);
-
-            int file_fd = open(ch1, O_RDONLY);
-            if (file_fd == -1) {
-                char msg[1024];
-                snprintf(msg, sizeof(msg), "%s 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>", banben);
-                send(c_fd, msg, strlen(msg), 0);
-            } else {
-                char header[512];
-                snprintf(header, sizeof(header), "%s 200 OK\r\nContent-Type: %s\r\nAccess-Control-Allow-Origin: *\r\n\r\n", banben, mime);
-                send(c_fd, header, strlen(header), 0);
-                int n;
-                char body[4096];
-                while ((n = read(file_fd, body, sizeof(body))) > 0)
-                    send(c_fd, body, n, 0);
-                close(file_fd);
-            }
-            close(c_fd);
-            exit(0);
-        } else {
-            close(c_fd);  // 父进程立即释放连接
-        }
+        // 创建线程处理该连接
+        pthread_t tid;
+        pthread_create(&tid, NULL, handle_client, (void*)(long)c_fd);
+        pthread_detach(tid);   // 线程结束后自动回收资源
     }
+
     close(fd);
     return 0;
 }

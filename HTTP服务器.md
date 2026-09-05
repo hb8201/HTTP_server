@@ -1,46 +1,46 @@
-## HTTP 服务
-`
-HTTP超文本传输协议(应用层协议), HTML 超文本标记语言（a.html）
-- HTTP 1.0          TCP(传输层)
-- HTTP 2.0          TCP(传输层)
-- HTTP 3.0          UDP(传输层)
+# HTTP服务器
 
-1990 HTTP, HTML(Web)
+这是一个用 C 语言编写的轻量级 HTTP 静态文件服务器，支持多线程并发处理客户端请求。
+监听 9000 端口，服务根目录为程序运行路径下的 html/ 子文件夹。
+自动识别常见文件扩展名并返回对应的 Content-Type。
+内置基本安全防护（禁止 .. 目录遍历）。
+提供 fork 进程版 和 pthread 线程版 两种并发模型（本文档以线程版为主）。
 
-超文本
-- 超链接：graph 网
-- 图片
-- 音频
-- 视频
+## 主要功能
+- 处理 GET 请求，返回静态资源（HTML、CSS、JS、图片、音视频等）。
+- 默认首页：若请求路径为 /，自动返回 /index.html。
+- 支持 70+ 种 MIME 类型映射（涵盖常见文本、图像、音视频、办公文档等）。
+- 响应头包含 Access-Control-Allow-Origin: *，支持跨域访问。
+- 错误响应：403（禁止访问目录遍历）、404（文件不存在）。
+- 多线程并发（线程版）或进程并发（fork 版），充分利用多核 CPU。
 
-PageRank算法：
-- 超链接，投一票
-- 每个页面权重不同
 
-### HTTP 服务器
-- apache: a pac
-- nginx
+## 并发模型
+每个客户端连接创建一个 独立线程 处理请求，处理结束后线程自动退出（pthread_detach 回收资源）。
+优点：比进程版创建开销小，适合中等并发（数百连接）。
+缺点：频繁创建/销毁线程仍有一定开销；线程数受限（默认线程栈 8MB，内存有限）。
 
-### nginx
 
-sudo apt install nginx
+## 性能与系统限制
 
-ps ef | grep nginx
+### 最大并发连接数
+- 文件描述符限制：默认 Linux 进程最大打开文件数 ulimit -n = 1024，因此实际并发连接约 1020 个（含监听 fd）。
+- 线程数限制：每个连接一个线程，线程栈（默认 8MB）会快速消耗内存
 
-service nginx status
+### 后续优化方向
+- 提高文件描述符上限：ulimit -n 65535（临时）或修改 /etc/security/limits.conf。
+- 增大监听队列：修改 listen 的 backlog 为 128 或更高。
+- 改用线程池：固定数量的工作线程，避免频繁创建。
 
-service nginx stop/start
+## 安全性
+路径遍历防护：检查请求路径中是否包含 ..，若包含直接返回 403 Forbidden。
+未实现其他安全特性（如 HTTP 方法过滤、URL 编码解码等），请勿直接暴露于公网。
 
-sudo netstat -tpnl | grep nginx
-
-http://127.0.0.1:80
-
-### HTTP 协议
-- 浏览器（其他程序）：用户代理 request
-- 服务器 执行响应 response
-
-nginx 去 /var/www/html 查找文件
-
-sudo chmod 777 a.txt
-
-127.0.0.1/
+## MIME 类型支持一览
+type() 函数涵盖以下类别：
+- 文本：.html, .css, .js, .txt, .csv
+- 办公文档：.doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf, .rtf
+- 图像：.gif, .ico, .jpeg, .jpg, .png, .bmp, .avif, .svg, .tif, .tiff, .webp
+- 音频：.mp3, .wav, .ogg
+- 视频：.mp4, .mpeg, .mpg, .avi, .mov, .ogv
+- 默认：application/octet-stream

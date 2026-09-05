@@ -36,14 +36,6 @@
         .video-overlay { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; background:transparent; touch-action:none; pointer-events:auto; }
         .video-indicator { position:absolute; bottom:16px; left:0; right:0; text-align:center; color:rgba(255,255,255,0.7); font-size:13px; pointer-events:none; text-shadow:0 1px 8px rgba(0,0,0,0.6); letter-spacing:1px; z-index:2; }
 
-        /* 简历页：直接加载 PDF */
-        #page-resume { padding:0; background:#fff; overflow:hidden; }
-        .pdf-container { position:relative; width:100%; height:100%; }
-        .pdf-container iframe { width:100%; height:100%; border:none; display:block; }
-        .download-btn { position:absolute; bottom:24px; right:24px; background:#3b82f6; color:#fff; border-radius:40px; padding:10px 20px; display:flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(59,130,246,0.4); font-size:15px; font-weight:500; cursor:pointer; transition:transform .15s,box-shadow .15s; z-index:10; touch-action:manipulation; border:none; outline:none; }
-        .download-btn:active { transform:scale(.94); box-shadow:0 2px 8px rgba(59,130,246,0.3); }
-        .download-btn svg { stroke:#fff; width:20px; height:20px; }
-
         /* 作品页 */
         #page-projects { padding:16px; display:flex; flex-direction:column; }
         .projects-title { font-size:16px; font-weight:600; color:#1a1a2e; margin-bottom:12px; flex-shrink:0; }
@@ -65,17 +57,14 @@
             .project-info h4 { font-size:13px; }
             .project-info p { font-size:10px; }
             .project-grid { gap:10px; }
-            .download-btn { bottom:16px; right:16px; padding:8px 16px; font-size:14px; }
-            .download-btn svg { width:18px; height:18px; }
         }
     </style>
 </head>
 <body>
 <div class="app">
-    <!-- 导航 -->
+    <!-- 导航（已删除“简历”项） -->
     <div class="top-nav">
         <div class="nav-item active" data-page="home">主页</div>
-        <div class="nav-item" data-page="resume">简历</div>
         <div class="nav-item" data-page="projects">学习</div>
     </div>
 
@@ -99,21 +88,6 @@
             </div>
         </div>
 
-        <!-- 简历页：直接加载 PDF（无需任何插件） -->
-        <div id="page-resume" class="page">
-            <div class="pdf-container">
-                <iframe src="/files/resume.pdf"></iframe>
-                <div class="download-btn" id="downloadBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    <span>导出</span>
-                </div>
-            </div>
-        </div>
-
         <!-- 作品页 -->
         <div id="page-projects" class="page">
             <div class="projects-title">🚀 我的学习笔记与开源作品</div>
@@ -130,12 +104,11 @@
 </div>
 
 <script>
-// ========== 页面切换 ==========
+// ========== 页面切换（仅保留主页和学习） ==========
 (function() {
     const navItems = document.querySelectorAll('.nav-item');
     const pages = {
         home: document.getElementById('page-home'),
-        resume: document.getElementById('page-resume'),
         projects: document.getElementById('page-projects')
     };
 
@@ -208,16 +181,6 @@
     video.addEventListener('dblclick', function(e) { e.preventDefault(); e.stopPropagation(); return false; });
     video.addEventListener('contextmenu', function(e) { e.preventDefault(); e.stopPropagation(); return false; });
 })();
-
-// ========== PDF 下载 ==========
-document.getElementById('downloadBtn').addEventListener('click', function() {
-    const link = document.createElement('a');
-    link.href = './files/resume.pdf';
-    link.download = '嵌入式工程师-黄博-简历.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
 </script>
 </body>
 </html>
